@@ -17,7 +17,9 @@ const express = require('express')
     , csrf = require('csurf') // https://www.npmjs.com/package/csurf
     , dataSharing = require('./lib/dataSharingEmbeddedSigning')
     , declaration = require('./lib/declarationEmbeddedSigning')
+    , cors = require('cors')
     ;
+
 
 const PORT = process.env.PORT || 5000
     , HOST = process.env.HOST || 'localhost'
@@ -30,6 +32,7 @@ if (dsConfig.appUrl != '' && dsConfig.appUrl != '{APP_URL}') {hostUrl = dsConfig
 
 let app = express()
   .use(helmet())
+  .use(cors())
   .use(express.static(path.join(__dirname, 'public')))
   .use(cookieParser())
   .use(session({
@@ -47,7 +50,7 @@ let app = express()
   .use(((req, res, next) => {
     res.locals.user = req.user;
     res.locals.session = req.session;
-    res.locals.dsConfig = { ...dsConfig, docOptions: docOptions, docNames: docNames };
+    res.locals.dsConfig = { ...dsConfig };
     res.locals.hostUrl = hostUrl; // Used by DSAuthCodeGrant#logout
     next()})) // Send user info to views
   .use(flash())
@@ -69,6 +72,9 @@ let app = express()
   .post('/dataSharing', dataSharing.createController)
   .get('/declaration', declaration.getController)
   .post('/declaration', declaration.createController)
+  .get('/dynamicsLogin', commonControllers.dynamicsLogin )
+  .post('/refresh', commonControllers.refreshTokenDynamics)
+  .get("/geocode", commonControllers.geoCode)
   ;
 
 function dsLoginCB1 (req, res, next) {req.dsAuthCodeGrant.oauth_callback1(req, res, next)}
